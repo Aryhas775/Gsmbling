@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Gambling Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color, #1a1a1a);
+            color: #fff;
+            text-align: center;
+        }
+        header {
+            background-color: #333;
+            padding: 20px;
+        }
+        header h1 {
+            color: gold;
+            margin: 0;
+        }
+        .container {
+            padding: 20px;
+        }
+        .currency-display {
+            margin: 20px 0;
+            font-size: 20px;
+            animation: fade-in 1s ease;
+        }
+        .game {
+            margin: 20px auto;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+            width: 300px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .game input[type="number"] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+        }
+        .game button {
+            background: gold;
+            border: none;
+            padding: 10px 20px;
+            color: #000;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .game button:hover {
+            background: #ffcc00;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 16px;
+            animation: fade-in 0.5s ease;
+        }
+        .history {
+            margin: 20px auto;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            overflow: auto;
+            max-height: 150px;
+        }
+        .history-item {
+            font-size: 14px;
+            text-align: left;
+            padding: 5px;
+            border-bottom: 1px solid #444;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        footer {
+            background-color: #000;
+            padding: 10px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            color: #fff;
+            font-size: 14px;
+        }
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* Leaderboard */
+        .leaderboard {
+            margin: 20px auto;
+            padding: 15px;
+            background: #111;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        .leaderboard h2 {
+            color: gold;
+        }
+        .leaderboard ul {
+            list-style: none;
+            padding: 0;
+        }
+        .leaderboard li {
+            padding: 10px;
+            background: #222;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Ultimate Gambling Game</h1>
+    </header>
+    <div class="container">
+        <div class="currency-display">
+            <p>Current Balance: <span id="currency">0</span></p>
+        </div>
+        <div class="game">
+            <h2>Place Your Bet</h2>
+            <input type="number" id="betAmount" placeholder="Enter your bet" min="1">
+            <button onclick="gamble()">Gamble!</button>
+            <button onclick="autoGambleToggle()">Auto-Gamble</button>
+            <p class="message" id="message"></p>
+        </div>
+        <div class="history">
+            <h3>Transaction History</h3>
+            <div id="history"></div>
+        </div>
+        <div class="leaderboard">
+            <h2>Leaderboard</h2>
+            <ul id="leaderboard">
+                <li>Player1: 1000</li>
+                <li>Player2: 750</li>
+                <li>Player3: 500</li>
+            </ul>
+        </div>
+        <div class="daily-reward">
+            <h2>Daily Rewards</h2>
+            <button onclick="claimDailyReward()">Claim Reward</button>
+            <p id="dailyMessage"></p>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2024 Ultimate Gambling Game. All rights reserved.</p>
+    </footer>
+    <script>
+        let currency = parseInt(localStorage.getItem('currency')) || 100;
+        let autoGamble = false;
+        let lastDailyReward = parseInt(localStorage.getItem('lastDailyReward')) || 0;
+
+        function updateCurrencyDisplay() {
+            document.getElementById("currency").textContent = currency;
+            localStorage.setItem('currency', currency);
+        }
+
+        setInterval(() => {
+            currency += 10;
+            updateCurrencyDisplay();
+        }, 10000);
+
+        function gamble() {
+            const betInput = document.getElementById("betAmount");
+            const bet = parseInt(betInput.value);
+
+            if (isNaN(bet) || bet <= 0 || bet > currency) {
+                document.getElementById("message").textContent = "Invalid bet! Please enter a valid amount.";
+                return;
+            }
+
+            currency -= bet;
+
+            const win = Math.random() < 0.5;
+
+            if (win) {
+                const winnings = bet * 2;
+                currency += winnings;
+                document.getElementById("message").textContent = `You won ${winnings}!`;
+            } else {
+                document.getElementById("message").textContent = `You lost ${bet}.`;
+            }
+
+            updateCurrencyDisplay();
+            logTransaction(win ? `Won ${bet * 2}` : `Lost ${bet}`);
+        }
+
+        function logTransaction(message) {
+            const historyDiv = document.getElementById("history");
+            const newEntry = document.createElement("div");
+            newEntry.className = "history-item";
+            newEntry.textContent = message;
+            historyDiv.prepend(newEntry);
+        }
+
+        function autoGambleToggle() {
+            autoGamble = !autoGamble;
+            if (autoGamble) {
+                document.getElementById("message").textContent = "Auto-Gamble enabled!";
+                autoGambleLoop();
+            } else {
+                document.getElementById("message").textContent = "Auto-Gamble disabled!";
+            }
+        }
+
+        function autoGambleLoop() {
+            if (!autoGamble) return;
+            gamble();
+            setTimeout(autoGambleLoop, 3000);
+        }
+
+        function claimDailyReward() {
+            const now = Date.now();
+            if (now - lastDailyReward >= 86400000) { // 24 hours in milliseconds
+                const reward = 100;
+                currency += reward;
+                updateCurrencyDisplay();
+                lastDailyReward = now;
+                localStorage.setItem('lastDailyReward', lastDailyReward);
+                document.getElementById("dailyMessage").textContent = `You claimed ${reward} as a daily reward!`;
+            } else {
+                document.getElementById("dailyMessage").textContent = "You have already claimed your reward today. Come back tomorrow!";
+            }
+        }
+
+        updateCurrencyDisplay();
+    </script>
+</body>
+</html>
